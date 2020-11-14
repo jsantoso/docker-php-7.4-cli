@@ -27,15 +27,13 @@ RUN apt-get install -y \
         libreadline-dev \
         librabbitmq-dev \
         libonig-dev \
-        unzip 
-
-RUN  curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+        unzip \
+        iproute2 \
+        iputils-ping
 
 RUN echo alias ll=\'ls -lF\' >> /root/.bashrc
 
 ENV PHP_ERROR_REPORTING  E_ALL & ~E_NOTICE
-ENV XDEBUG_HOST host.docker.internal
-ENV XDEBUG_PORT 9000
 
 RUN docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql
 
@@ -61,18 +59,9 @@ RUN docker-php-ext-enable redis
 RUN pecl install amqp
 RUN docker-php-ext-enable amqp
 
-RUN pecl install xdebug
+ADD conf.d/php.ini /usr/local/etc/php/conf.d/90-php.ini
 
-RUN pecl install memcached
-RUN echo extension=memcached.so >> /usr/local/etc/php/conf.d/memcached.ini
 
-ADD conf.d/php.ini /etc/php/7.4/php.ini
-ADD conf.d/xdebug.ini /etc/php/7.4/xdebug.ini
+ENTRYPOINT ["docker-php-entrypoint"]
 
-RUN mkdir -p /etc/php/7.4/cli/conf.d
-RUN ln -s /etc/php/7.4/php.ini /etc/php/7.4/cli/conf.d/90-tris.ini
-RUN ln -s /etc/php/7.4/xdebug.ini /etc/php/7.4/cli/conf.d/90-xdebug.ini
-
-RUN mkdir -p /usr/local/etc/php/conf.d
-RUN ln -s /etc/php/7.4/php.ini /usr/local/etc/php/conf.d/90-tris.ini
-RUN ln -s /etc/php/7.4/xdebug.ini /usr/local/etc/php/conf.d/90-xdebug.ini
+CMD ["php", "-a"]
